@@ -1,11 +1,238 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Codeblock — Visual Algorithm Editor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
-    
+
+<header id="topbar">
+  <div class="tb-logo">
+    <div class="tb-logo-mark">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+        <rect x="1"  y="1"  width="7" height="7" rx="2" fill="#4A9EFF"/>
+        <rect x="10" y="1"  width="7" height="7" rx="2" fill="#7C6FF7"/>
+        <rect x="1"  y="10" width="7" height="7" rx="2" fill="#3DD68C"/>
+        <rect x="10" y="10" width="7" height="7" rx="2" fill="#F5B731"/>
+      </svg>
+    </div>
+    <span class="tb-logo-text">Codeblock</span>
+  </div>
+  <div class="tb-sep"></div>
+  <button class="tb-btn" id="btn-new" title="Новый (Ctrl+N)">
+    <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 2h6l3 3v7H2V2z"/><path d="M8 2v3h3"/></svg>Новый
+  </button>
+  <button class="tb-btn" id="btn-save" title="Сохранить (Ctrl+S)">
+    <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 2h8l2 2v8H2V2z"/><rect x="4" y="8" width="6" height="4" rx=".5"/><rect x="4.5" y="2" width="4" height="3" rx=".5"/></svg>Сохранить
+  </button>
+  <button class="tb-btn" id="btn-load" title="Загрузить">
+    <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 3h4l1.5 1.5H12v7.5H1.5V3z"/></svg>Загрузить
+  </button>
+  <div class="tb-sep"></div>
+  <button class="tb-btn tb-run"  id="btn-run" title="Запустить (F5)">
+    <svg viewBox="0 0 12 13" fill="currentColor"><path d="M2 1.5l9 5-9 5V1.5z"/></svg>Запустить <kbd>F5</kbd>
+  </button>
+  <button class="tb-btn tb-step-toggle" id="btn-step-toggle" title="Пошаговый режим">
+    <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 2l5 5-5 5"/><line x1="11" y1="2" x2="11" y2="12"/></svg>По шагам
+  </button>
+  <button class="tb-btn tb-next" id="btn-next" title="Следующий шаг (F10)" disabled>
+    <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 2l5 5-5 5"/><path d="M8 2l5 5-5 5"/></svg>Шаг <kbd>F10</kbd>
+  </button>
+  <button class="tb-btn tb-stop" id="btn-stop" title="Стоп (Esc)" style="display:none">
+    <svg viewBox="0 0 11 11" fill="currentColor"><rect x="1.5" y="1.5" width="8" height="8" rx="2"/></svg>Стоп <kbd>Esc</kbd>
+  </button>
+  <button class="tb-btn" id="btn-reset" title="Сброс переменных">
+    <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M12 7A5 5 0 112 7"/><path d="M12 3v4h-4"/></svg>Сброс
+  </button>
+  <button class="tb-btn tb-danger" id="btn-delete-all" title="Удалить все блоки">
+    <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4h10"/><path d="M5 4V2.5h4V4"/><path d="M5.5 7v4M8.5 7v4"/><rect x="3" y="4" width="8" height="8" rx="1"/></svg>Удалить все
+  </button>
+  <div style="flex:1"></div>
+  <div class="status-pill" id="status-pill" data-state="ready">
+    <span class="status-dot"></span>
+    <span id="status-text">Готов к запуску</span>
+  </div>
+</header>
+
+<div id="layout">
+
+  <!-- CODE PANEL -->
+  <div id="code-panel">
+    <div class="panel-header">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2L1 6l3 4"/><path d="M8 2l3 4-3 4"/></svg>
+      Сгенерированный код
+    </div>
+    <pre id="code-output"><span class="code-ph">// Добавьте блоки на холст —
+// здесь появится псевдокод…</span></pre>
+  </div>
+
+  <!-- CANVAS -->
+  <div id="canvas-wrap">
+    <div id="canvas-viewport">
+      <div id="canvas">
+        <div id="block-list"></div>
+      </div>
+    </div>
+
+    <div id="empty-state">
+      <div class="es-icon">
+        <svg width="56" height="56" viewBox="0 0 56 56" fill="none">
+          <rect x="4"  y="4"  width="22" height="22" rx="5" fill="#1a2235" stroke="#2E3F58" stroke-width="1.5"/>
+          <rect x="30" y="4"  width="22" height="22" rx="5" fill="#1a2235" stroke="#2E3F58" stroke-width="1.5"/>
+          <rect x="4"  y="30" width="22" height="22" rx="5" fill="#1a2235" stroke="#2E3F58" stroke-width="1.5"/>
+          <rect x="30" y="30" width="22" height="22" rx="5" fill="#1a2235" stroke="#2E3F58" stroke-width="1.5"/>
+          <line x1="15" y1="15" x2="41" y2="41" stroke="#2E3F58" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="41" y1="15" x2="15" y2="41" stroke="#2E3F58" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="es-title">Холст пуст</div>
+      <div class="es-sub">Перетащите блоки из панели справа<br>или загрузите готовый пример</div>
+    </div>
+
+    <div id="canvas-controls">
+      <button class="cc-btn" id="cc-zoom-out" title="Уменьшить (Ctrl+-)">−</button>
+      <span id="cc-zoom-label">100%</span>
+      <button class="cc-btn" id="cc-zoom-in" title="Увеличить (Ctrl++)">+</button>
+      <div class="cc-sep"></div>
+      <button class="cc-btn" id="cc-fit" title="Подогнать">⊡</button>
+      <button class="cc-btn" id="cc-reset-view" title="Сбросить вид">⌖</button>
+    </div>
+
+    <div id="canvas-hints">
+      Колесо: прокрутка &nbsp;|&nbsp; Ctrl+колесо: масштаб &nbsp;|&nbsp; Пробел+мышь: перемещение &nbsp;|&nbsp; Shift+колесо: горизонтально
+    </div>
+  </div>
+
+  <!-- SIDEBAR -->
+  <aside id="sidebar" class="open">
+    <button id="sidebar-toggle" title="Свернуть/развернуть">
+      <svg class="chevron-icon" width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 2L4 7l5 5"/>
+      </svg>
+    </button>
+    <div class="sidebar-scroll">
+
+      <div class="sb-group">
+        <div class="sb-group-label">
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><rect x=".5" y=".5" width="9" height="9" rx="2" stroke="currentColor"/></svg>
+          <span>Переменные</span>
+        </div>
+        <div class="palette-item" draggable="true" data-type="VAR_DECL" data-tip="Объявить int|Создаёт int переменные (= 0). Несколько через запятую.|int a, b, c">
+          <div class="pi-dot" style="--c:var(--col-var)"></div>
+          <div class="pi-labels"><span class="pi-name">Объявить int</span><span class="pi-code">int a, b, c</span></div>
+        </div>
+        <div class="palette-item" draggable="true" data-type="VAR_DECL_ASSIGN" data-tip="Объявить int = …|Объявляет переменную и сразу присваивает значение.|int a = 5 + b">
+          <div class="pi-dot" style="--c:var(--col-var)"></div>
+          <div class="pi-labels"><span class="pi-name">Объявить int = …</span><span class="pi-code">int a = expr</span></div>
+        </div>
+        <div class="palette-item" draggable="true" data-type="ARRAY_DECL" data-tip="Объявить массив|Статический массив int[N]. Все элементы = 0.|int arr[5]">
+          <div class="pi-dot" style="--c:var(--col-arr)"></div>
+          <div class="pi-labels"><span class="pi-name">Объявить массив</span><span class="pi-code">int arr[N]</span></div>
+        </div>
+      </div>
+
+      <div class="sb-group">
+        <div class="sb-group-label">
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5h6M5 2v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <span>Операции</span>
+        </div>
+        <div class="palette-item" draggable="true" data-type="ASSIGN" data-tip="Присваивание|Вычисляет выражение и записывает в переменную. +,-,*,/,%, скобки.|a = a + b * 2">
+          <div class="pi-dot" style="--c:var(--col-assign)"></div>
+          <div class="pi-labels"><span class="pi-name">Присвоить</span><span class="pi-code">a = expr</span></div>
+        </div>
+        <div class="palette-item" draggable="true" data-type="ARRAY_ASSIGN" data-tip="Запись в массив|Записывает значение в ячейку массива по индексу.|arr[i] = arr[j] + 1">
+          <div class="pi-dot" style="--c:var(--col-aarr)"></div>
+          <div class="pi-labels"><span class="pi-name">Массив arr[i] =</span><span class="pi-code">arr[i] = expr</span></div>
+        </div>
+      </div>
+
+      <div class="sb-group">
+        <div class="sb-group-label">
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 2h6v2L5 7 2 4V2z" stroke="currentColor"/></svg>
+          <span>Управление</span>
+        </div>
+        <div class="palette-item" draggable="true" data-type="IF" data-tip="If|Выполняет блок если условие истинно. Поддерживает AND, OR, NOT, скобки.|if (a > 0 AND b != 0)">
+          <div class="pi-dot" style="--c:var(--col-if)"></div>
+          <div class="pi-labels"><span class="pi-name">If</span><span class="pi-code">if (cond) { … }</span></div>
+        </div>
+        <div class="palette-item" draggable="true" data-type="IF_ELSE" data-tip="If – Else|Ветка «тогда» и «иначе». Поддерживает AND, OR, NOT, скобки.|if (a > b) … else …">
+          <div class="pi-dot" style="--c:var(--col-if)"></div>
+          <div class="pi-labels"><span class="pi-name">If – Else</span><span class="pi-code">if … else …</span></div>
+        </div>
+        <div class="palette-item" draggable="true" data-type="WHILE" data-tip="While|Повторяет тело пока условие истинно. Поддерживает AND, OR, NOT.|while (i < n)">
+          <div class="pi-dot" style="--c:var(--col-while)"></div>
+          <div class="pi-labels"><span class="pi-name">While</span><span class="pi-code">while (cond) { … }</span></div>
+        </div>
+        <div class="palette-item" draggable="true" data-type="FOR" data-tip="For (C++ стиль)|Init — один раз. Cond — перед каждой итерацией. Step — после каждой итерации.|for (i=0; i&lt;n; i=i+1)">
+          <div class="pi-dot" style="--c:var(--col-for)"></div>
+          <div class="pi-labels"><span class="pi-name">For</span><span class="pi-code">for (init; cond; step)</span></div>
+        </div>
+      </div>
+
+      <div class="sb-group">
+        <div class="sb-group-label">
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4" stroke="currentColor"/><path d="M5 3v2.5L7 7" stroke="currentColor" stroke-linecap="round"/></svg>
+          <span>Примеры</span>
+        </div>
+        <button class="example-btn" data-example="bubble">
+          <span class="ex-icon">🫧</span>
+          <div class="ex-labels"><span class="ex-name">Сортировка пузырьком</span><span class="ex-desc">Сортирует массив [5,3,8,1,4]</span></div>
+        </button>
+        <button class="example-btn" data-example="findmax">
+          <span class="ex-icon">🔍</span>
+          <div class="ex-labels"><span class="ex-name">Поиск максимума</span><span class="ex-desc">Находит max в массиве [3,9,2,7,5,11]</span></div>
+        </button>
+        <button class="example-btn" data-example="sum">
+          <span class="ex-icon">Σ</span>
+          <div class="ex-labels"><span class="ex-name">Сумма массива</span><span class="ex-desc">Суммирует элементы [10,20,30,40,50]</span></div>
+        </button>
+        <button class="example-btn" data-example="for_demo">
+          <span class="ex-icon">🔄</span>
+          <div class="ex-labels"><span class="ex-name">Демо For-цикла</span><span class="ex-desc">Квадраты 0..4, затем их сумма</span></div>
+        </button>
+      </div>
+
+    </div>
+  </aside>
+
+</div>
+
+<!-- OUTPUT PANEL -->
+<div id="output-panel">
+  <div id="output-resize-handle"></div>
+  <div class="output-tabs">
+    <button class="out-tab active" data-tab="vars">📊 Переменные</button>
+    <button class="out-tab" data-tab="log">📝 Лог</button>
+    <button class="out-tab" data-tab="errors">❌ Ошибки <span id="err-count" class="err-badge" style="display:none">0</span></button>
+    <div style="flex:1"></div>
+    <button class="tb-btn" id="btn-clear-log" style="font-size:11px;padding:3px 8px">Очистить</button>
+    <button class="cc-btn" id="btn-toggle-output">▾</button>
+  </div>
+  <div id="output-content">
+    <div class="out-hint">Нажмите <b>▶ Запустить</b> для выполнения программы…</div>
+  </div>
+</div>
+
+<!-- TOOLTIP -->
+<div id="tooltip"><div class="tt-title" id="tt-title"></div><div class="tt-desc" id="tt-desc"></div><div class="tt-code" id="tt-code"></div></div>
+
+<!-- ADD BLOCK MENU -->
+<div id="add-menu" style="display:none"></div>
+
+<!-- CONTEXT MENU -->
+<div id="ctx-menu" style="display:none">
+  <div class="ctx-item" id="ctx-dup">⎘ Дублировать <kbd>Ctrl+D</kbd></div>
+  <div class="ctx-item" id="ctx-up">↑ Переместить вверх</div>
+  <div class="ctx-item" id="ctx-down">↓ Переместить вниз</div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item ctx-danger" id="ctx-del">✕ Удалить <kbd>Del</kbd></div>
+</div>
+
+<input type="file" id="file-input" accept=".json" style="display:none"/>
+<script src="app.js"></script>
 </body>
 </html>
